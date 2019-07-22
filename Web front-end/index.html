@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <div class="canvasBox">
+            <canvas id="videoCanvas" width=500 height=500></canvas>
+    </div>
+    <div class="canvasBox" style="display:none;">
+            <video src="" id="videoHidden" autoplay loop></video>
+    </div>
+    
+    <input type="file" id="inputFileVideo">
+    <input type="file" id="inputFileWaterMarker">
+</body>
+<script>
+    var canvasWidth = 500;
+    var canvasHeight = 500;
+    var timerCanvas = false;
+    var imageWaterMarker = null;
+    var canvasBox = document.querySelector(".canvasBox")
+    var fileInputVideo = document.querySelector("#inputFileVideo");
+    var fileWaterMarker = document.querySelector("#inputFileWaterMarker");
+    var videoCanvas = document.querySelector("#videoCanvas");
+    var ctx=videoCanvas.getContext("2d");
+    var videoHidden = document.querySelector('#videoHidden');
+
+    fileInputVideo.addEventListener('change',ev=>{
+        var file = ev.target.files[0];
+        getFileInfo(file).then(file=>{
+            videoHidden.src = file;
+        }).catch(err=>{
+            alert(err)
+        })
+    })
+
+    fileWaterMarker.addEventListener('change',ev=>{
+        var file = ev.target.files[0];
+        getFileInfo(file).then(file=>{
+            imageWaterMarker = new Image();
+            imageWaterMarker.src = file;
+            imageWaterMarker.onload = ev=>{
+                ctx.drawImage(imageWaterMarker,canvasWidth-120-10,canvasHeight-50-10,120,50)
+            }
+        }).catch(err=>{
+            alert(err)
+        })
+    })
+
+    
+
+    videoHidden.addEventListener('loadeddata',ev=>{
+        var videoData = ev.target;
+        canvasWidth = videoData.videoWidth;
+        canvasHeight = videoData.videoHeight;
+        canvasBox.style.height = canvasHeight+"px";
+        canvasBox.style.width = canvasWidth+"px";
+        videoCanvas.width = canvasWidth;
+        videoCanvas.height = canvasHeight;
+        if(timerCanvas!==false){
+            clearInterval(timerCanvas)
+        }
+        timerCanvas = setInterval(function(){
+                ctx.clearRect(0,0,canvasWidth,canvasHeight)
+                ctx.drawImage(videoData,0,0);
+                if(imageWaterMarker!==null){
+                    ctx.drawImage(imageWaterMarker,canvasWidth-120-10,canvasHeight-50-10,120,50)
+                }
+            },30);
+    })
+
+    function getFileInfo(file){
+        return new Promise((resolve,reject)=>{
+            var fileReader = new FileReader();
+            fileReader.onload = ev=>{
+                var file = ev.target.result;
+                resolve(file);
+            }
+            fileReader.readAsDataURL(file)
+        })
+        
+    }
+</script>
+<style>
+    .canvasBox{
+        height:500px;
+        width:500px;
+        background-color:grey;
+        margin-left:auto;
+        margin-right:auto;
+    }
+    #inputFile{
+        margin-left:auto;
+        margin-right:auto;
+    }
+</style>
+</html>
